@@ -1,0 +1,205 @@
+{
+  "employees": [
+    {"id": "ex1", "name": "Elena Marsh", "title": "Chief Executive Officer", "department": "Executive", "status": "Done", "managerId": "", "email": "elena.marsh@nimbusrobotics.example", "phone": "(555) 010-2200", "startDate": "2016-01-11"},
+    {"id": "ex2", "name": "Raj Patel", "title": "Chief Technology Officer", "department": "Engineering", "status": "Done", "managerId": "ex1", "email": "raj.patel@nimbusrobotics.example", "phone": "(555) 014-2231", "startDate": "2016-08-03"},
+    {"id": "ex3", "name": "Grace Liu", "title": "Chief Financial Officer", "department": "Finance", "status": "Done", "managerId": "ex1", "email": "grace.liu@nimbusrobotics.example", "phone": "(555) 099-7712", "startDate": "2017-02-20"},
+    {"id": "ex4", "name": "Tomas Reyes", "title": "VP of Marketing", "department": "Marketing", "status": "Done", "managerId": "ex1", "email": "tomas.reyes@nimbusrobotics.example", "phone": "(555) 041-8850", "startDate": "2018-05-14"},
+    {"id": "ex5", "name": "Wei Zhang", "title": "Engineering Manager, Core Platform", "department": "Engineering", "status": "Done", "managerId": "ex2", "email": "wei.zhang@nimbusrobotics.example", "phone": "", "startDate": "2019-03-04"},
+    {"id": "ex6", "name": "Ana Souza", "title": "Engineering Manager, Robotics", "department": "Engineering", "status": "Done", "managerId": "ex2", "email": "ana.souza@nimbusrobotics.example", "phone": "", "startDate": "2019-09-16"},
+    {"id": "ex7", "name": "Priya Kapoor", "title": "Controller", "department": "Finance", "status": "Done", "managerId": "ex3", "email": "priya.kapoor@nimbusrobotics.example", "phone": "(555) 077-4410", "startDate": "2020-01-27"},
+    {"id": "ex8", "name": "Sarah Kim", "title": "Marketing Manager", "department": "Marketing", "status": "Done", "managerId": "ex4", "email": "sarah.kim@nimbusrobotics.example", "phone": "", "startDate": "2020-11-09"},
+    {"id": "ex9", "name": "Liam O'Connor", "title": "Senior Software Engineer", "department": "Engineering", "status": "Done", "managerId": "ex5", "email": "liam.oconnor@nimbusrobotics.example", "phone": "", "startDate": "2021-06-21"},
+    {"id": "ex10", "name": "Fatima Noor", "title": "Software Engineer", "department": "Engineering", "status": "In Progress", "managerId": "ex5", "email": "fatima.noor@nimbusrobotics.example", "phone": "", "startDate": "2022-04-18"},
+    {"id": "ex11", "name": "Diego Fernandez", "title": "Robotics Engineer", "department": "Engineering", "status": "In Progress", "managerId": "ex6", "email": "diego.fernandez@nimbusrobotics.example", "phone": "", "startDate": "2022-09-12"},
+    {"id": "ex12", "name": "Devon Park", "title": "Staff Accountant", "department": "Finance", "status": "Done", "managerId": "ex7", "email": "devon.park@nimbusrobotics.example", "phone": "", "startDate": "2023-03-20"},
+    {"id": "ex13", "name": "Marcus Chen", "title": "VP of Sales", "department": "Sales", "status": "Done", "managerId": "ex1", "email": "marcus.chen@nimbusrobotics.example", "phone": "(555) 099-7712", "startDate": "2018-02-19"},
+    {"id": "ex14", "name": "Amara Whitfield", "title": "Account Executive", "department": "Sales", "status": "Done", "managerId": "ex13", "email": "amara.whitfield@nimbusrobotics.example", "phone": "(555) 077-4410", "startDate": "2021-07-12"},
+    {"id": "ex15", "name": "Naomi Bennett", "title": "Director of People", "department": "Human Resources", "status": "Done", "managerId": "ex1", "email": "naomi.bennett@nimbusrobotics.example", "phone": "(555) 065-3390", "startDate": "2019-01-08"},
+    {"id": "ex16", "name": "Owen Baptiste", "title": "HR Generalist", "department": "Human Resources", "status": "Not Started", "managerId": "ex15", "email": "owen.baptiste@nimbusrobotics.example", "phone": "", "startDate": "2022-10-03"}
+  ],
+  "projects": [
+    {
+      "id": "pr1", "name": "Website relaunch", "status": "active",
+      "startDate": "2026-07-14", "endDate": "2026-09-30",
+      "people": ["Wei Zhang", "Sarah Kim"],
+      "meetings": [
+        {"id": "m1", "date": "2026-08-04", "memo": "Reviewed the new homepage wireframes. Nav structure approved; hero copy still needs a rewrite.", "nextSteps": "Sarah to send two hero-copy options before the next check-in."},
+        {"id": "m2", "date": "2026-08-18", "memo": "Picked the hero copy. Dev estimates 3 weeks for the template build.", "nextSteps": "Wei to confirm staging environment is ready by Aug 25."}
+      ],
+      "tasks": [
+        {
+          "id": "t1", "title": "Homepage redesign", "assignee": "Sarah Kim",
+          "subtasks": [
+            {"id": "s1", "title": "Wireframes", "startDate": "2026-07-14", "endDate": "2026-08-04", "status": "done"},
+            {"id": "s2", "title": "Hero copy", "startDate": "2026-08-05", "endDate": "2026-08-18", "status": "done"},
+            {"id": "s3", "title": "Template build", "startDate": "2026-08-19", "endDate": "2026-09-10", "status": "inprogress"},
+            {"id": "s4", "title": "QA pass", "startDate": "2026-09-11", "endDate": "2026-09-25", "status": "todo"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pr2", "name": "Robotics arm firmware upgrade", "status": "stuck",
+      "startDate": "2026-07-01", "endDate": "2026-09-15",
+      "people": ["Ana Souza", "Diego Fernandez"],
+      "meetings": [
+        {"id": "m1", "date": "2026-08-11", "memo": "New firmware passed bench tests but is failing the collision-avoidance regression suite intermittently.", "nextSteps": "Diego to isolate the failing test case before we can schedule the field trial."}
+      ],
+      "tasks": [
+        {
+          "id": "t1", "title": "Collision-avoidance regression", "assignee": "Diego Fernandez",
+          "subtasks": [
+            {"id": "s1", "title": "Isolate failing test", "startDate": "2026-08-11", "endDate": "2026-08-20", "status": "done"},
+            {"id": "s2", "title": "Patch reflective-surface handling", "startDate": "2026-08-21", "endDate": "2026-09-05", "status": "inprogress"},
+            {"id": "s3", "title": "Re-run field trial suite", "startDate": "2026-09-06", "endDate": "2026-09-15", "status": "todo"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pr3", "name": "Q4 marketing campaign", "status": "upcoming",
+      "startDate": "2026-10-01", "endDate": "2026-12-20",
+      "people": ["Tomas Reyes", "Sarah Kim", "Marcus Chen"],
+      "meetings": [],
+      "tasks": []
+    },
+    {
+      "id": "pr4", "name": "Vendor contract renewal", "status": "completed",
+      "startDate": "2026-05-01", "endDate": "2026-07-30",
+      "people": ["Grace Liu", "Priya Kapoor"],
+      "meetings": [
+        {"id": "m1", "date": "2026-07-28", "memo": "Signed the renewed terms with the liability cap legal asked for. No service interruption.", "nextSteps": "Priya to file the executed contract and set a reminder for the next renewal window."}
+      ],
+      "tasks": []
+    },
+    {
+      "id": "pr5", "name": "Mobile app beta launch", "status": "active",
+      "startDate": "2026-06-01", "endDate": "2026-10-15",
+      "people": ["Liam O'Connor", "Fatima Noor"],
+      "meetings": [
+        {"id": "m1", "date": "2026-07-22", "memo": "Closed beta opened to 200 users. Crash rate is under 0.5%, in line with target.", "nextSteps": "Fatima to triage the top three feedback themes before the wider rollout."},
+        {"id": "m2", "date": "2026-08-19", "memo": "Push notifications and offline sync both passed QA. App store listing draft is ready for review.", "nextSteps": "Liam to schedule the App Store and Play Store submissions for early September."}
+      ],
+      "tasks": [
+        {
+          "id": "t1", "title": "Store submissions", "assignee": "Liam O'Connor",
+          "subtasks": [
+            {"id": "s1", "title": "App Store listing", "startDate": "2026-08-19", "endDate": "2026-09-01", "status": "done"},
+            {"id": "s2", "title": "Play Store listing", "startDate": "2026-08-19", "endDate": "2026-09-01", "status": "done"},
+            {"id": "s3", "title": "Submit iOS build", "startDate": "2026-09-02", "endDate": "2026-09-08", "status": "done"},
+            {"id": "s4", "title": "Submit Android build", "startDate": "2026-09-02", "endDate": "2026-09-08", "status": "todo"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pr6", "name": "Warehouse pick-and-pack robot pilot", "status": "stuck",
+      "startDate": "2026-05-15", "endDate": "2026-09-20",
+      "people": ["Ana Souza", "Wei Zhang"],
+      "meetings": [
+        {"id": "m1", "date": "2026-08-06", "memo": "Pilot arm is misreading barcodes on reflective packaging about 1 in 20 picks — outside the tolerance the warehouse partner agreed to.", "nextSteps": "Ana to test a polarizing filter on the scanner before the next site visit."}
+      ],
+      "tasks": []
+    },
+    {
+      "id": "pr7", "name": "Enterprise CRM migration", "status": "active",
+      "startDate": "2026-08-01", "endDate": "2026-11-30",
+      "people": ["Marcus Chen", "Amara Whitfield"],
+      "meetings": [
+        {"id": "m1", "date": "2026-08-25", "memo": "Historical deal data imported and spot-checked against the old system — record counts match.", "nextSteps": "Amara to run the sales team through the new pipeline views next week."}
+      ],
+      "tasks": []
+    },
+    {
+      "id": "pr8", "name": "FY27 annual audit prep", "status": "upcoming",
+      "startDate": "2026-11-01", "endDate": "2027-01-31",
+      "people": ["Grace Liu", "Devon Park", "Priya Kapoor"],
+      "meetings": [],
+      "tasks": []
+    },
+    {
+      "id": "pr9", "name": "New-hire onboarding revamp", "status": "completed",
+      "startDate": "2026-03-01", "endDate": "2026-06-15",
+      "people": ["Naomi Bennett", "Owen Baptiste"],
+      "meetings": [
+        {"id": "m1", "date": "2026-06-12", "memo": "New checklist and welcome-week schedule rolled out to all departments. First cohort under the new process starts Monday.", "nextSteps": "Owen to collect feedback from the first cohort after their two-week mark."}
+      ],
+      "tasks": []
+    },
+    {
+      "id": "pr10", "name": "Series C investor deck", "status": "completed",
+      "startDate": "2026-04-01", "endDate": "2026-05-20",
+      "people": ["Elena Marsh", "Grace Liu", "Tomas Reyes"],
+      "meetings": [
+        {"id": "m1", "date": "2026-05-18", "memo": "Final deck approved after the board's review — growth metrics and the marketing case study were the sections that changed most.", "nextSteps": "Tomas to prep the FAQ doc ahead of the first investor meetings."}
+      ],
+      "tasks": []
+    }
+  ],
+  "evaluations": [
+    {"id": "eva1", "employeeId": "ex5", "period": "2025 H2", "reviewer": "Raj Patel", "quality": 4, "productivity": 4, "communication": 4, "leadership": 3, "notes": "Solid delivery on the core platform roadmap; ready for more cross-team scope.", "createdAt": "2026-01-12T10:00:00.000Z"},
+    {"id": "eva2", "employeeId": "ex5", "period": "2026 H1", "reviewer": "Raj Patel", "quality": 5, "productivity": 4, "communication": 5, "leadership": 4, "notes": "Stepped up leading the migration cutover with very clear team communication.", "createdAt": "2026-07-05T10:00:00.000Z"},
+    {"id": "eva3", "employeeId": "ex9", "period": "2026 H1", "reviewer": "Wei Zhang", "quality": 4, "productivity": 3, "communication": 3, "leadership": 2, "notes": "Strong code quality; PR descriptions could use more context for reviewers.", "createdAt": "2026-07-08T10:00:00.000Z"},
+    {"id": "eva4", "employeeId": "ex10", "period": "2026 H1", "reviewer": "Wei Zhang", "quality": 3, "productivity": 3, "communication": 3, "leadership": 2, "notes": "Ramping up well for the tenure — on track.", "createdAt": "2026-07-10T10:00:00.000Z"},
+    {"id": "eva5", "employeeId": "ex6", "period": "2026 H1", "reviewer": "Raj Patel", "quality": 5, "productivity": 5, "communication": 4, "leadership": 5, "notes": "Excellent quarter — the robotics team hit every milestone under her.", "createdAt": "2026-07-06T10:00:00.000Z"},
+    {"id": "eva6", "employeeId": "ex11", "period": "2026 H1", "reviewer": "Ana Souza", "quality": 4, "productivity": 4, "communication": 4, "leadership": 3, "notes": "Caught the collision-avoidance regression before it hit the field trial.", "createdAt": "2026-07-09T10:00:00.000Z"},
+    {"id": "eva7", "employeeId": "ex8", "period": "2026 H1", "reviewer": "Tomas Reyes", "quality": 4, "productivity": 4, "communication": 5, "leadership": 3, "notes": "Campaign briefs are consistently the clearest on the team.", "createdAt": "2026-07-11T10:00:00.000Z"},
+    {"id": "eva8", "employeeId": "ex14", "period": "2026 H1", "reviewer": "Marcus Chen", "quality": 2, "productivity": 2, "communication": 3, "leadership": 2, "notes": "Missed two follow-up commitments with the CRM migration stakeholders — needs a tighter follow-up cadence.", "createdAt": "2026-07-14T10:00:00.000Z"}
+  ],
+  "conversations": [
+    {
+      "id": "conv1", "aboutType": "project", "aboutRefId": "pr1", "aboutLabel": "Website relaunch",
+      "participants": ["Wei Zhang", "Sarah Kim"],
+      "createdAt": "2026-08-19T15:00:00.000Z",
+      "messages": [
+        {"id": "cm1", "from": "Sarah Kim", "text": "Hero copy options are ready for review — sent both to your inbox.", "createdAt": "2026-08-19T15:00:00.000Z", "read": true},
+        {"id": "cm2", "from": "Wei Zhang", "text": "Picked the second one. Dev estimates 3 weeks for the template build.", "createdAt": "2026-08-19T16:30:00.000Z", "read": false}
+      ]
+    },
+    {
+      "id": "conv2", "aboutType": "project", "aboutRefId": "pr2", "aboutLabel": "Robotics arm firmware upgrade",
+      "participants": ["Ana Souza", "Diego Fernandez"],
+      "createdAt": "2026-08-13T10:00:00.000Z",
+      "messages": [
+        {"id": "cm1", "from": "Diego Fernandez", "text": "Isolated the failing regression case — looks like it's the reflective-surface handling.", "createdAt": "2026-08-13T10:00:00.000Z", "read": false}
+      ]
+    },
+    {
+      "id": "conv3", "aboutType": "evaluation", "aboutRefId": "eva2", "aboutLabel": "Wei Zhang — 2026 H1",
+      "participants": ["Raj Patel", "Wei Zhang"],
+      "createdAt": "2026-07-04T09:00:00.000Z",
+      "messages": [
+        {"id": "cm1", "from": "Raj Patel", "text": "Wanted to flag before we finalize — the migration cutover leadership was a standout this half.", "createdAt": "2026-07-04T09:00:00.000Z", "read": true},
+        {"id": "cm2", "from": "Wei Zhang", "text": "Appreciate that — happy to take on more cross-team scope next half.", "createdAt": "2026-07-05T11:00:00.000Z", "read": false}
+      ]
+    },
+    {
+      "id": "conv4", "aboutType": "task", "aboutRefId": null, "aboutLabel": "Fix onboarding email template",
+      "participants": ["Naomi Bennett", "Owen Baptiste"],
+      "createdAt": "2026-08-25T13:00:00.000Z",
+      "messages": [
+        {"id": "cm1", "from": "Owen Baptiste", "text": "The welcome email still links to the old benefits PDF — can we fix it before the next cohort?", "createdAt": "2026-08-25T13:00:00.000Z", "read": false}
+      ]
+    },
+    {
+      "id": "conv5", "aboutType": "topic", "aboutRefId": null, "aboutLabel": "Q4 hiring plan",
+      "participants": ["Elena Marsh", "Naomi Bennett", "Marcus Chen"],
+      "createdAt": "2026-08-29T09:00:00.000Z",
+      "messages": [
+        {"id": "cm1", "from": "Elena Marsh", "text": "Let's align on headcount for Q4 before the board meeting next week.", "createdAt": "2026-08-29T09:00:00.000Z", "read": true},
+        {"id": "cm2", "from": "Marcus Chen", "text": "Sales needs at least two more AEs to hit the Q4 number.", "createdAt": "2026-08-29T14:20:00.000Z", "read": false}
+      ]
+    },
+    {
+      "id": "conv6", "aboutType": "general", "aboutRefId": null, "aboutLabel": "General",
+      "participants": ["Ana Souza"],
+      "createdAt": "2026-08-27T08:15:00.000Z",
+      "messages": [
+        {"id": "cm1", "from": "Ana Souza", "text": "Quick heads up — I'll be out Thursday afternoon for a site visit.", "createdAt": "2026-08-27T08:15:00.000Z", "read": true}
+      ]
+    }
+  ],
+  "fieldDefs": [],
+  "notes": [],
+  "checklist": []
+}

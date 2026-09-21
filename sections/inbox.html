@@ -1,0 +1,48 @@
+<!-- Inbox: conversations -->
+      <!-- Inbox / conversations view -->
+      <div id="panel-inbox" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-inbox">
+        <div class="view-toolbar">
+          <p class="view-hint">Messages about tasks, topics, projects, and evaluations — threaded by what they're about.</p>
+          <div class="view-toolbar-right">
+            <button type="button" class="btn-primary" id="conv-new-btn">+ New message</button>
+          </div>
+        </div>
+        <div id="conv-example-banner" class="example-banner" hidden>
+          <span>You're viewing example conversations for the fictional Nimbus Robotics team so you can see how this looks. Add your own to replace them.</span>
+          <button type="button" class="btn-ghost" id="conv-clear-examples-btn">Clear examples</button>
+        </div>
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="conv-search" type="text" placeholder="Search messages, people, or related work…" />
+          </div>
+        </div>
+        <div class="segmented conv-filter-bar" role="group" aria-label="Filter conversations">
+          <button type="button" class="seg-btn active" data-conv-filter="all">All</button>
+          <button type="button" class="seg-btn" data-conv-filter="unread">Unread</button>
+          <button type="button" class="seg-btn" data-conv-filter="task">Tasks</button>
+          <button type="button" class="seg-btn" data-conv-filter="topic">Topics</button>
+          <button type="button" class="seg-btn" data-conv-filter="project">Projects</button>
+          <button type="button" class="seg-btn" data-conv-filter="evaluation">Evaluations</button>
+        </div>
+
+        <div class="layout conv-layout">
+          <div class="card conv-list-card">
+            <div class="conv-thread-list" id="conv-thread-list"></div>
+            <div class="empty-state" id="conv-list-empty" hidden><h3>No conversations yet</h3><p>Start one with "+ New message" above.</p></div>
+          </div>
+
+          <div class="card conv-detail-card">
+            <div id="conv-detail-empty" class="empty-state"><h3>Select a conversation</h3><p>Pick one on the left to read and reply.</p></div>
+            <div id="conv-detail-body" hidden>
+              <div class="conv-detail-head" id="conv-detail-head"></div>
+              <div class="conv-messages" id="conv-messages"></div>
+              <form class="conv-composer" id="conv-composer">
+                <input type="text" id="conv-from" placeholder="Your name" autocomplete="off" />
+                <textarea id="conv-text" rows="2" placeholder="Write a message…"></textarea>
+                <button type="submit" class="btn-primary" id="conv-send-btn">Send</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>

@@ -1,0 +1,37 @@
+<!-- Overview: dashboard -->
+      <!-- Dashboard view -->
+      <div id="panel-dashboard" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-dashboard">
+        <div class="ai-dash-card" id="dash-ai-card">
+          <div class="ai-dash-head">
+            <div class="ai-dash-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/></svg>
+              AI daily summary
+            </div>
+            <button type="button" class="btn-ghost" id="dash-ai-btn">Generate summary</button>
+          </div>
+          <div class="ai-dash-body" id="dash-ai-body" hidden></div>
+        </div>
+        <div class="dash-grid" id="dash-grid">
+          <div class="dash-card">
+            <h3>Projects by status</h3>
+            <div id="dash-dept"></div>
+          </div>
+          <div class="dash-card">
+            <h3>Timeline health</h3>
+            <div class="dash-stat-row" id="dash-status"></div>
+          </div>
+          <div class="dash-card">
+            <h3>Team size</h3>
+            <div id="dash-tenure"></div>
+          </div>
+          <div class="dash-card">
+            <h3>People workload</h3>
+            <div class="dash-stat-row" id="dash-workload"></div>
+          </div>
+          <div class="dash-card" style="grid-column: span 2;">
+            <h3>Upcoming deadlines</h3>
+            <div id="dash-anniv"></div>
+          </div>
+        </div>
+        <div class="dash-empty" id="dash-empty" hidden><h3>Nothing to summarize yet</h3><p>Add projects to see the dashboard fill in.</p></div>
+      </div>

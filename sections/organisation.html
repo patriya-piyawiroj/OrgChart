@@ -1,0 +1,253 @@
+<!-- Organisation: org chart, directory, board, workload -->
+      <!-- Org chart view -->
+      <div id="panel-chart" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-chart">
+        <div class="card chart-card">
+          <div id="chart-forest" class="chart-forest"></div>
+          <div id="chart-empty" class="chart-empty" hidden>Add people and set who they report to — the chart will draw itself here.</div>
+        </div>
+      </div>
+
+      <!-- Directory view -->
+      <div id="panel-table" class="tab-panel active" role="tabpanel" aria-labelledby="tab-btn-table">
+        <div class="layout">
+          <div class="card form-card">
+            <h2 id="form-title">Add person</h2>
+            <p class="form-sub" id="form-sub">Set who they report to and the chart updates on its own.</p>
+
+            <div class="fields-toggle-row">
+              <button type="button" class="btn-text" id="manage-fields-btn" style="padding:0;">Manage custom fields</button>
+            </div>
+            <div class="fields-panel" id="fields-panel" hidden>
+              <div id="field-defs-list"></div>
+              <div class="fields-add-row">
+                <input type="text" id="new-field-label" placeholder="Field name, e.g. Employee ID" />
+                <select id="new-field-type">
+                  <option value="text">Text</option>
+                  <option value="number">Number</option>
+                  <option value="date">Date</option>
+                  <option value="dropdown">Dropdown</option>
+                  <option value="checkbox">Checkbox</option>
+                </select>
+                <input type="text" id="new-field-options" placeholder="Options, comma separated" hidden />
+                <button type="button" class="btn-ghost" id="add-field-btn">Add field</button>
+              </div>
+            </div>
+
+            <form id="emp-form" novalidate>
+              <div class="field" data-field="photo">
+                <label for="f-photo">Profile photo <span style="text-transform:none;font-weight:400;">(optional)</span></label>
+                <div class="photo-field-row">
+                  <div class="photo-preview" id="photo-preview"><span>?</span></div>
+                  <div class="photo-actions">
+                    <input id="f-photo" name="photo" type="file" accept="image/*" />
+                    <button type="button" class="btn-danger-text" id="remove-photo-btn" style="display:none;">Remove photo</button>
+                  </div>
+                </div>
+                <div class="hint">Cropped to a small square thumbnail automatically.</div>
+              </div>
+              <div class="field" data-field="name">
+                <label for="f-name">Full name</label>
+                <input id="f-name" name="name" type="text" autocomplete="off" placeholder="Alex Rivera" />
+                <div class="err">Enter the person's name.</div>
+              </div>
+              <div class="field" data-field="title">
+                <label for="f-title">Job title</label>
+                <input id="f-title" name="title" type="text" autocomplete="off" placeholder="Engineering Manager" />
+                <div class="err">Enter a job title.</div>
+              </div>
+              <div class="field" data-field="department">
+                <label for="f-department">Department</label>
+                <input id="f-department" name="department" type="text" autocomplete="off" list="dept-list" placeholder="Engineering" />
+                <datalist id="dept-list"></datalist>
+                <div class="err">Enter a department.</div>
+              </div>
+              <div class="field" data-field="status">
+                <label for="f-status">Onboarding status</label>
+                <select id="f-status" name="status">
+                  <option value="Not Started">Not Started</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Done">Done</option>
+                </select>
+                <div class="hint">Drives the Board view's status columns.</div>
+              </div>
+              <div class="field" data-field="managerId">
+                <label for="f-manager">Reports to</label>
+                <select id="f-manager" name="managerId">
+                  <option value="">No manager (top of chart)</option>
+                </select>
+                <div class="hint">Drives the org chart and workload views.</div>
+              </div>
+              <div class="field" data-field="email">
+                <label for="f-email">Email</label>
+                <input id="f-email" name="email" type="email" autocomplete="off" placeholder="alex@company.com" />
+                <div class="err">Enter a valid email address.</div>
+              </div>
+              <div class="field" data-field="phone">
+                <label for="f-phone">Phone <span style="text-transform:none;font-weight:400;">(optional)</span></label>
+                <input id="f-phone" name="phone" type="tel" autocomplete="off" placeholder="(555) 012-3344" />
+              </div>
+              <div class="field" data-field="startDate">
+                <label for="f-startDate">Start date</label>
+                <input id="f-startDate" name="startDate" type="date" />
+                <div class="err">Choose a start date.</div>
+              </div>
+              <div id="custom-fields-container"></div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary" id="submit-btn">Add person</button>
+                <button type="button" class="btn-ghost" id="cancel-btn" style="display:none;">Cancel</button>
+              </div>
+            </form>
+
+            <div class="notes-section checklist-section" id="checklist-section" hidden>
+              <h3 id="checklist-heading">Onboarding checklist</h3>
+              <div class="checklist-list" id="checklist-list"></div>
+              <p class="notes-empty" id="checklist-empty" hidden>No checklist items yet.</p>
+              <div class="notes-form">
+                <input type="text" id="checklist-input" placeholder="Add a checklist item…" style="flex:1;border-radius:9px;border:1.5px solid var(--border-strong);background:var(--surface-2);color:var(--ink);font:inherit;padding:8px 9px;" />
+                <button type="button" class="btn-ghost" id="checklist-add-btn">Add</button>
+              </div>
+              <button type="button" class="btn-text" id="checklist-template-btn" style="margin-top:8px;padding:0;">Use standard onboarding template</button>
+            </div>
+
+            <div class="notes-section" id="notes-section" hidden>
+              <h3 id="notes-heading">Notes</h3>
+              <div class="notes-list" id="notes-list"></div>
+              <p class="notes-empty" id="notes-empty" hidden>No notes yet.</p>
+              <div class="notes-form">
+                <textarea id="notes-input" placeholder="Leave a note for the team…"></textarea>
+                <button type="button" class="btn-ghost" id="notes-add-btn">Add</button>
+              </div>
+              <div class="ai-inline-row">
+                <button type="button" class="btn-text ai-btn" id="notes-ai-btn">✨ Improve with AI</button>
+              </div>
+              <div class="ai-preview-box" id="notes-ai-preview" hidden></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="toolbar">
+              <div class="search-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="search" type="text" placeholder="Search by name, title, or email…" />
+              </div>
+              <select id="dept-filter"><option value="">All departments</option></select>
+            </div>
+
+            <div id="example-banner" class="example-banner" hidden>
+              <span>You're viewing example records for a fictional company (Nimbus Robotics) so you can see how this looks. Add your own to replace them.</span>
+              <button type="button" class="btn-ghost" id="clear-examples-btn">Clear examples</button>
+            </div>
+
+            <div class="card table-card">
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr id="emp-thead-row">
+                      <th>Name / title</th>
+                      <th>Reports to</th>
+                      <th>Department</th>
+                      <th>Status</th>
+                      <th>Email</th>
+                      <th>Start date</th>
+                      <th class="visually-hidden">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="emp-tbody"></tbody>
+                </table>
+              </div>
+              <div class="empty-state" id="empty-state" hidden>
+                <h3>No matches</h3>
+                <p>Try a different search or department filter.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Board / Kanban view -->
+      <div id="panel-board" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-board">
+        <div class="view-toolbar">
+          <p class="view-hint" id="board-hint">Grouped by department. Click a card to edit.</p>
+          <div class="view-toolbar-right">
+            <div class="segmented" role="group" aria-label="Group board by">
+              <button type="button" class="seg-btn active" data-group="department">Department</button>
+              <button type="button" class="seg-btn" data-group="status">Status</button>
+            </div>
+            <button type="button" class="btn-ghost" id="board-quick-add">+ Add person</button>
+          </div>
+        </div>
+        <div class="board-scroll">
+          <div class="board-columns" id="board-columns"></div>
+        </div>
+        <div class="empty-state" id="board-empty" hidden><h3>No one added yet</h3><p>Add your first person to see the board.</p></div>
+      </div>
+
+      <!-- Workload view -->
+      <div id="panel-workload" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-workload">
+        <div class="view-toolbar">
+          <p class="view-hint">Direct reports per manager, against a target span of control. Click a name to edit.</p>
+        </div>
+        <div class="card" style="padding: 20px;">
+          <div class="wl-legend"><span class="wl-legend-line"></span> Target: <span id="wl-target-text">5</span> direct reports</div>
+          <div class="wl-scroll">
+            <div class="wl-inner" id="workload-rows"></div>
+          </div>
+          <div class="empty-state" id="workload-empty" hidden><h3>No managers yet</h3><p>Set "Reports to" on a person to see workload here.</p></div>
+          <p class="wl-footnote" id="workload-footnote"></p>
+        </div>
+      </div>
+
+      <!-- Self sign-up view -->
+      <div id="panel-selfadd" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-selfadd">
+        <div class="card" style="max-width:560px;margin:0 auto;padding:24px;">
+          <div id="self-add-form-wrap">
+            <h2 style="font-size:19px;">Add yourself to the directory</h2>
+            <p class="form-sub" style="margin:4px 0 18px;">Share this tab with new hires so they can add their own basics. An admin can fill in the rest — department fine-tuning, custom fields — later.</p>
+            <form id="self-form" novalidate>
+              <div class="field" data-field="name">
+                <label for="sf-name">Full name</label>
+                <input id="sf-name" name="name" type="text" autocomplete="off" placeholder="Alex Rivera" />
+                <div class="err">Enter your name.</div>
+              </div>
+              <div class="field" data-field="title">
+                <label for="sf-title">Job title</label>
+                <input id="sf-title" name="title" type="text" autocomplete="off" placeholder="Engineering Manager" />
+                <div class="err">Enter a job title.</div>
+              </div>
+              <div class="field" data-field="department">
+                <label for="sf-department">Department</label>
+                <input id="sf-department" name="department" type="text" autocomplete="off" list="dept-list" placeholder="Engineering" />
+                <div class="err">Enter a department.</div>
+              </div>
+              <div class="field" data-field="managerId">
+                <label for="sf-manager">Reports to</label>
+                <select id="sf-manager" name="managerId">
+                  <option value="">No manager (top of chart)</option>
+                </select>
+              </div>
+              <div class="field" data-field="email">
+                <label for="sf-email">Email</label>
+                <input id="sf-email" name="email" type="email" autocomplete="off" placeholder="alex@company.com" />
+                <div class="err">Enter a valid email address.</div>
+              </div>
+              <div class="field" data-field="phone">
+                <label for="sf-phone">Phone <span style="text-transform:none;font-weight:400;">(optional)</span></label>
+                <input id="sf-phone" name="phone" type="tel" autocomplete="off" placeholder="(555) 012-3344" />
+              </div>
+              <div class="field" data-field="startDate">
+                <label for="sf-startDate">Start date</label>
+                <input id="sf-startDate" name="startDate" type="date" />
+                <div class="err">Choose a start date.</div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary" id="self-submit-btn">Add me to the directory</button>
+              </div>
+            </form>
+          </div>
+          <div id="self-add-success" hidden style="text-align:center;padding:20px 0;">
+            <h2 style="font-size:19px;">You're on the list</h2>
+            <p class="form-sub" style="margin:6px 0 18px;">Thanks — your details have been added to the directory.</p>
+            <button type="button" class="btn-ghost" id="self-add-another-btn">Add another person</button>
+          </div>
+        </div>
+      </div>

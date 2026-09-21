@@ -1,0 +1,162 @@
+<!-- Projects: projects list, task board, timeline, calendar, evaluations -->
+      <!-- Projects view -->
+      <div id="panel-meetings" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-meetings">
+        <div class="projects-page">
+          <div class="toolbar projects-toolbar">
+            <div class="search-wrap">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="mtg-search" type="text" placeholder="Search projects or people…" />
+            </div>
+            <div class="dash-stat-row projects-stats">
+              <div class="dash-stat badge tag-4" style="border-radius:12px;"><div class="num" id="mtg-stat-active">0</div><div class="lbl">Active</div></div>
+              <div class="dash-stat badge tag-2" style="border-radius:12px;"><div class="num" id="mtg-stat-upcoming">0</div><div class="lbl">Upcoming</div></div>
+              <div class="dash-stat badge tag-3" style="border-radius:12px;"><div class="num" id="mtg-stat-completed">0</div><div class="lbl">Completed</div></div>
+            </div>
+            <button type="button" class="btn-primary projects-new-btn" id="mtg-new-btn">+ New project</button>
+          </div>
+
+          <div id="mtg-example-banner" class="example-banner" hidden>
+            <span>You're viewing example projects for the fictional Nimbus Robotics team so you can see how this looks. Add your own to replace them.</span>
+            <button type="button" class="btn-ghost" id="mtg-clear-examples-btn">Clear examples</button>
+          </div>
+
+          <div id="mtg-sections-root"></div>
+          <div class="empty-state" id="mtg-empty" hidden>
+            <h3>No projects yet</h3>
+            <p>Use <strong>New project</strong> to add your first one.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task board view -->
+      <div id="panel-taskboard" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-taskboard">
+        <div class="view-toolbar">
+          <p class="view-hint">Drag a subtask between columns, or use Move, to mark it to do, in progress, or done. Parent task progress follows how many subtasks are complete.</p>
+          <div class="view-toolbar-right">
+            <select id="tb-filter-project" aria-label="Filter by project"><option value="">All projects</option></select>
+            <select id="tb-filter-assignee" aria-label="Filter by assignee"><option value="">All people</option></select>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="tb-search" type="text" placeholder="Search subtasks, tasks, or projects…" />
+          </div>
+        </div>
+        <div class="board-scroll">
+          <div class="board-columns" id="tb-columns"></div>
+        </div>
+        <div class="empty-state" id="tb-empty" hidden><h3>No subtasks yet</h3><p>Open a project and add a task with subtasks to see them here.</p></div>
+      </div>
+
+      <!-- Timeline view -->
+      <div id="panel-timeline" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-timeline">
+        <div class="view-toolbar">
+          <p class="view-hint">Project schedules from start to end date, grouped by status. Click a bar to open the project.</p>
+          <button type="button" class="btn-ghost" id="timeline-quick-add">+ Add project</button>
+        </div>
+        <div class="tl-pipeline" id="tl-pipeline"></div>
+        <div class="card" style="padding: 20px;">
+          <div class="tl-scroll">
+            <div class="tl-inner">
+              <div class="tl-axis" id="tl-axis"></div>
+              <div id="tl-groups"></div>
+            </div>
+          </div>
+          <div class="empty-state" id="tl-empty" hidden><h3>No projects yet</h3><p>Add your first project to see the timeline.</p></div>
+        </div>
+      </div>
+
+      <!-- Calendar view -->
+      <div id="panel-calendar" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-calendar">
+        <div class="card" style="padding: 20px;">
+          <div class="cal-head">
+            <button type="button" class="cal-nav-btn" id="cal-prev" aria-label="Previous month">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="cal-title" id="cal-title">Month</div>
+            <button type="button" class="cal-nav-btn" id="cal-next" aria-label="Next month">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <p class="view-hint" style="margin: 2px 0 14px;">Project start dates, due dates, and logged meetings. Click an entry to open the project.</p>
+          <div class="cal-grid">
+            <div class="cal-dow">Sun</div><div class="cal-dow">Mon</div><div class="cal-dow">Tue</div><div class="cal-dow">Wed</div><div class="cal-dow">Thu</div><div class="cal-dow">Fri</div><div class="cal-dow">Sat</div>
+          </div>
+          <div class="cal-grid" id="cal-grid" style="margin-top: 6px;"></div>
+          <p class="cal-empty-note" id="cal-empty-note" hidden></p>
+        </div>
+      </div>
+
+      <!-- Evaluation / performance view -->
+      <div id="panel-evaluation" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-evaluation">
+        <div class="layout">
+          <div class="card form-card">
+            <h2>Log evaluation</h2>
+            <p class="form-sub">Score a review period across a few criteria — the history and average build up per person.</p>
+            <form id="eval-form" novalidate>
+              <div class="field" data-field="employeeId">
+                <label for="ev-employee">Employee</label>
+                <select id="ev-employee"><option value="">Select a person…</option></select>
+                <div class="err">Choose who this evaluation is for.</div>
+              </div>
+              <div class="field" data-field="period">
+                <label for="ev-period">Review period</label>
+                <input id="ev-period" type="text" autocomplete="off" placeholder="2026 H1" />
+                <div class="err">Enter a review period.</div>
+              </div>
+              <div class="field" data-field="reviewer">
+                <label for="ev-reviewer">Reviewer</label>
+                <input id="ev-reviewer" type="text" autocomplete="off" placeholder="Manager name" />
+                <div class="err">Enter the reviewer's name.</div>
+              </div>
+              <div class="field">
+                <div class="ev-range-field"><label style="margin:0;" for="ev-quality">Quality of work</label><span id="ev-quality-val">3</span></div>
+                <input id="ev-quality" type="range" min="1" max="5" step="1" value="3" />
+              </div>
+              <div class="field">
+                <div class="ev-range-field"><label style="margin:0;" for="ev-productivity">Productivity</label><span id="ev-productivity-val">3</span></div>
+                <input id="ev-productivity" type="range" min="1" max="5" step="1" value="3" />
+              </div>
+              <div class="field">
+                <div class="ev-range-field"><label style="margin:0;" for="ev-communication">Communication</label><span id="ev-communication-val">3</span></div>
+                <input id="ev-communication" type="range" min="1" max="5" step="1" value="3" />
+              </div>
+              <div class="field">
+                <div class="ev-range-field"><label style="margin:0;" for="ev-leadership">Leadership</label><span id="ev-leadership-val">3</span></div>
+                <input id="ev-leadership" type="range" min="1" max="5" step="1" value="3" />
+              </div>
+              <div class="field">
+                <label for="ev-notes">Notes <span style="text-transform:none;font-weight:400;">(optional)</span></label>
+                <textarea id="ev-notes" rows="3" placeholder="Strengths, growth areas, context…" style="width:100%;padding:9px 11px;border-radius:10px;border:1.5px solid var(--border-strong);background:var(--surface-2);color:var(--ink);font:inherit;resize:vertical;"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary" id="eval-submit-btn">Log evaluation</button>
+              </div>
+            </form>
+          </div>
+
+          <div>
+            <div class="view-toolbar">
+              <p class="view-hint">Average score per person across all logged evaluations. Click a row for history.</p>
+              <div class="dash-stat-row" style="max-width:380px;">
+                <div class="dash-stat badge wl-balanced" style="border-radius:12px;"><div class="num" id="ev-stat-exceeds">0</div><div class="lbl">Exceeds</div></div>
+                <div class="dash-stat badge wl-under" style="border-radius:12px;"><div class="num" id="ev-stat-meets">0</div><div class="lbl">Meets</div></div>
+                <div class="dash-stat badge wl-over" style="border-radius:12px;"><div class="num" id="ev-stat-needs">0</div><div class="lbl">Needs work</div></div>
+              </div>
+            </div>
+            <div class="toolbar">
+              <div class="search-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="eval-search" type="text" placeholder="Search by name or title…" />
+              </div>
+            </div>
+            <div id="eval-example-banner" class="example-banner" hidden>
+              <span>You're viewing example evaluations for the fictional Nimbus Robotics team so you can see how this looks. Add your own to replace them.</span>
+              <button type="button" class="btn-ghost" id="eval-clear-examples-btn">Clear examples</button>
+            </div>
+            <div id="eval-rows-root"></div>
+            <div class="empty-state" id="eval-empty" hidden><h3>No one to evaluate yet</h3><p>Add people in the Directory tab first.</p></div>
+          </div>
+        </div>
+      </div>
