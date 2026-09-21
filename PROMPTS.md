@@ -143,34 +143,3 @@ Return {"text":"..."}.
 ```
 Write today's project-health summary.
 ```
-
----
-
-## Client-side prompts (not Ollama)
-
-These still use `callSampleText` / `claude.use("sample")` in [`js/app.js`](js/app.js). They do not go through `ai.py`.
-
-### 6. Improve note
-
-**UI:** Directory → person notes → “Improve with AI”
-
-```
-Improve the clarity and phrasing of this note without changing its meaning or adding new information.
-Keep it about the same length. Return ONLY the revised text, nothing else.
-
----
-{note text}
-```
-
-### 7. Suggest next steps from memo
-
-**UI:** Project → Log a meeting → “Suggest next steps from memo”
-
-```
-Read this meeting memo and extract the concrete action items — things a specific person needs to do next.
-Write them as a short list, one per line starting with "- ", no other commentary.
-If nothing is actionable, respond with exactly: No action items found.
-
----
-{memo}
-```
