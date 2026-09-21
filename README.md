@@ -58,8 +58,8 @@ flowchart TB
 | Browser UI | Shell in `orgchartdirectory.html`; sections load from `sections/`; logic in `js/app.js`; HTTP client in `js/api.js`. |
 | `server.py` | Serves static files and the REST API; seeds SQLite on first run. |
 | `data/orgchart.db` | Source of truth for people, projects, tasks, meetings, evaluations, conversations. |
-| `ai.py` | Agent loop: prompts Ollama, runs read-only API tools, returns structured JSON. |
-| Ollama | Local LLM. Required for Suggest tasks, Draft email, Ask AI, timeline summary, and daily summary. |
+| `ai.py` | Agent loop: prompts Ollama, **requires** at least one read tool call, returns structured JSON. Validates assignees/emails against directory records where applicable. |
+| Ollama | Local LLM. Required for every AI feature (tasks, email, chat, timeline, daily summary, note improve, next-steps). |
 
 ### CRUD data flow
 
@@ -79,7 +79,7 @@ Examples: edit a person (`/api/employees`), replace project tasks (`/api/project
 
 ### AI agent flow
 
-AI actions never write tasks or conversations themselves. The model only **reads** via tools; the UI still confirms drafts (Add task / Send message).
+AI actions never write tasks or conversations themselves. The model only **reads** via tools; the UI still confirms every draft (Keep / Discard, Use this, Add task, Send message).
 
 ```mermaid
 sequenceDiagram
@@ -89,30 +89,35 @@ sequenceDiagram
   participant LLM as Ollama
   participant DB as SQLite
 
-  UI->>API: POST /api/ai/suggest-tasks etc.
+  UI->>API: POST /api/ai/... (may include facts or events)
   API->>Agent: run action
   loop up to 8 rounds
     Agent->>LLM: chat + tool schemas
     LLM-->>Agent: tool_calls or final text
+    Note over Agent: If no tools used yet, nudge LLM to call one
     Agent->>API: GET /api/projects, /api/employees, ...
     API->>DB: read
     DB-->>API: data
     API-->>Agent: tool result
   end
-  Agent-->>API: JSON tasks, email, or text
+  Agent-->>API: JSON draft / text (assignees/emails filtered)
   API-->>UI: response
-  Note over UI: User reviews draft, then Add / Send
+  Note over UI: User Keep/Discard or Use this before save
 ```
 
 | UI action | Endpoint | Typical result |
 | --- | --- | --- |
 | Suggest tasks | `POST /api/ai/suggest-tasks` | Draft parent tasks (not saved until Add) |
 | Draft email | `POST /api/ai/draft-email` | Opens Inbox compose, prefilled |
-| Ask AI | `POST /api/ai/chat` | Answer text |
-| Timeline summary | `POST /api/ai/timeline-summary` | Summary text |
-| Daily summary | `POST /api/ai/daily-summary` | Dashboard summary text |
+| Ask AI | `POST /api/ai/chat` | Answer text → Keep / Discard |
+| Timeline summary | `POST /api/ai/timeline-summary` | Summary of ≤10 recent events → Keep / Discard |
+| Daily summary | `POST /api/ai/daily-summary` | Uses dashboard facts → Keep / Discard |
+| Improve note | `POST /api/ai/improve-note` | Revised note → Use this / Discard |
+| Suggest next steps | `POST /api/ai/suggest-next-steps` | Action bullets → Use this / Discard |
 
 Read tools the agent may call: list/get employees, notes, checklist, list/get projects, evaluations, conversations.
+
+Prompts: [PROMPTS.md](PROMPTS.md).
 
 ## Layout
 
@@ -140,4 +145,4 @@ OrgChart/
 - **Organisation** — org chart, directory, people board, workload, evaluations
 - **Projects** — projects list, task board, timeline, calendar; tasks with progress bands and meeting log
 - **Inbox** — threaded messages about tasks, projects, topics, evaluations
-- **Overview** — dashboard stats and AI daily summary
+- **Overview** — dashboard stats (including unassigned projects) and AI daily summary

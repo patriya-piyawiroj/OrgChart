@@ -202,18 +202,39 @@ def _tool_calls(message: dict[str, Any]) -> list[dict[str, Any]]:
     return calls if isinstance(calls, list) else []
 
 
-def run_agent(system: str, user: str, api_call: ApiCall, extra_messages: list[dict[str, Any]] | None = None) -> str:
+def run_agent(
+    system: str,
+    user: str,
+    api_call: ApiCall,
+    extra_messages: list[dict[str, Any]] | None = None,
+    require_tools: bool = True,
+    tools: list[dict[str, Any]] | None = None,
+) -> str:
+    """Run the Ollama tool loop. By default at least one tool call is required
+    before a final answer is accepted (grounding in TeamGrid records)."""
+    tool_defs = tools if tools is not None else READ_TOOLS
     messages: list[dict[str, Any]] = [{"role": "system", "content": system}]
     if extra_messages:
         messages.extend(extra_messages)
     messages.append({"role": "user", "content": user})
+    used_tools = False
 
     for _ in range(MAX_ROUNDS):
-        message = ollama_chat(messages, READ_TOOLS)
+        message = ollama_chat(messages, tool_defs)
         messages.append(message)
         calls = _tool_calls(message)
         if not calls:
+            if require_tools and tool_defs and not used_tools:
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "You must call at least one retrieval tool to load TeamGrid records "
+                        "before answering. Call a tool now, then return the JSON result."
+                    ),
+                })
+                continue
             return str(message.get("content") or "").strip()
+        used_tools = True
         for call in calls:
             fn = call.get("function") or {}
             name = str(fn.get("name") or call.get("name") or "")
@@ -226,6 +247,27 @@ def run_agent(system: str, user: str, api_call: ApiCall, extra_messages: list[di
                 "content": json.dumps(result, ensure_ascii=False),
             })
     raise AiError(502, "The model kept calling tools without finishing. Try again.")
+
+
+def _employee_names(api_call: ApiCall) -> set[str]:
+    rows = api_call("GET", "/api/employees", None)
+    if not isinstance(rows, list):
+        return set()
+    return {str(r.get("name") or "").strip() for r in rows if isinstance(r, dict) and r.get("name")}
+
+
+def _employee_emails_by_name(api_call: ApiCall) -> dict[str, str]:
+    rows = api_call("GET", "/api/employees", None)
+    out: dict[str, str] = {}
+    if not isinstance(rows, list):
+        return out
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        name = str(r.get("name") or "").strip()
+        if name:
+            out[name] = str(r.get("email") or "").strip()
+    return out
 
 
 def parse_json_object(text: str) -> dict[str, Any]:
@@ -260,14 +302,36 @@ def suggest_tasks(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
         " Call get_project for the given id and list_employees so assignees match real people. "
         "Propose exactly two parent tasks, each with exactly two subtasks. "
         "Use ISO dates (YYYY-MM-DD) inside the project's startDate/endDate window when those exist. "
+        "Assignee must be a name returned by list_employees (or empty). "
         'Return {"tasks":[{"title":"","assignee":"","subtasks":[{"title":"","startDate":"","endDate":""}]}]}.'
     )
     user = f"Suggest tasks for project id {project_id}."
-    data = parse_json_object(run_agent(system, user, api_call))
+    data = parse_json_object(run_agent(system, user, api_call, require_tools=True))
     tasks = data.get("tasks")
     if not isinstance(tasks, list):
         raise AiError(502, "The model did not return a tasks array.")
-    return {"tasks": tasks}
+    known = _employee_names(api_call)
+    cleaned = []
+    for t in tasks:
+        if not isinstance(t, dict):
+            continue
+        assignee = str(t.get("assignee") or "").strip()
+        if assignee and known and assignee not in known:
+            assignee = ""
+        subs = t.get("subtasks") if isinstance(t.get("subtasks"), list) else []
+        cleaned.append({
+            "title": str(t.get("title") or "").strip(),
+            "assignee": assignee,
+            "subtasks": [
+                {
+                    "title": str(s.get("title") or "").strip(),
+                    "startDate": str(s.get("startDate") or "").strip(),
+                    "endDate": str(s.get("endDate") or "").strip(),
+                }
+                for s in subs if isinstance(s, dict)
+            ],
+        })
+    return {"tasks": cleaned}
 
 
 def draft_email(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
@@ -278,15 +342,38 @@ def draft_email(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
         SHARED_RULES +
         " Call get_project and list_employees so recipient names and emails come from the directory. "
         "Write a short, professional email for the requested preset. "
+        "Only include recipients who appear on the project and in list_employees; use their directory email. "
         'Return {"subject":"","body":"","recipients":[{"name":"","email":""}]}.'
     )
     extra = f" Extra instructions: {instructions}" if instructions else ""
     user = f"Draft a {preset} email for project id {project_id}.{extra}"
-    data = parse_json_object(run_agent(system, user, api_call))
+    data = parse_json_object(run_agent(system, user, api_call, require_tools=True))
+    emails_by_name = _employee_emails_by_name(api_call)
+    project = api_call("GET", f"/api/projects/{project_id}", None)
+    project_people = set()
+    if isinstance(project, dict):
+        project_people = {str(n).strip() for n in (project.get("people") or []) if n}
+    recipients_out = []
+    raw_recipients = data.get("recipients") if isinstance(data.get("recipients"), list) else []
+    for r in raw_recipients:
+        if not isinstance(r, dict):
+            continue
+        name = str(r.get("name") or "").strip()
+        if not name:
+            continue
+        if project_people and name not in project_people:
+            continue
+        if name not in emails_by_name:
+            continue
+        recipients_out.append({"name": name, "email": emails_by_name[name]})
+    if not recipients_out and project_people:
+        for name in sorted(project_people):
+            if name in emails_by_name:
+                recipients_out.append({"name": name, "email": emails_by_name[name]})
     return {
         "subject": str(data.get("subject") or ""),
         "body": str(data.get("body") or ""),
-        "recipients": data.get("recipients") if isinstance(data.get("recipients"), list) else [],
+        "recipients": recipients_out,
     }
 
 
@@ -313,9 +400,10 @@ def chat(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
         SHARED_RULES +
         " Answer the question using only tool results. If the data is not there, say so plainly. "
         "Be concise: short paragraphs or bullets, no markdown headers. "
+        "You must call retrieval tools before answering. "
         'Return {"text":"..."}.'
     )
-    data = parse_json_object(run_agent(system, last_user, api_call, extras))
+    data = parse_json_object(run_agent(system, last_user, api_call, extras, require_tools=True))
     text = str(data.get("text") or "").strip()
     if not text:
         raise AiError(502, "The model returned an empty answer.")
@@ -324,14 +412,37 @@ def chat(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
 
 def timeline_summary(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
     project_id = _require_project_id(body)
+    events = (body or {}).get("events")
+    if not isinstance(events, list) or not events:
+        raise AiError(400, "events is required (recent meeting list, not full history).")
+    # Cap and sanitize — only summarize what the client selected
+    limited = []
+    for m in events[:10]:
+        if not isinstance(m, dict):
+            continue
+        limited.append({
+            "date": str(m.get("date") or ""),
+            "memo": str(m.get("memo") or ""),
+            "nextSteps": str(m.get("nextSteps") or ""),
+        })
+    if not limited:
+        raise AiError(400, "No usable events to summarize.")
+    events_text = "\n".join(
+        f"{i + 1}. {e['date']} — memo: {e['memo'] or '—'} | next steps: {e['nextSteps'] or '—'}"
+        for i, e in enumerate(limited)
+    )
     system = (
         SHARED_RULES +
-        " Call get_project and summarize recent meetings: what happened, what was decided, what is still open. "
-        "3-5 short sentences or bullets. "
+        " Call get_project once to confirm the project exists and match names/status. "
+        "Summarize ONLY the meeting events supplied in the user message — do not invent older meetings. "
+        "Cover what happened, what was decided, and what is still open. 3-5 short sentences or bullets. "
         'Return {"text":"..."}.'
     )
-    user = f"Summarize the timeline for project id {project_id}."
-    data = parse_json_object(run_agent(system, user, api_call))
+    user = (
+        f"Summarize the timeline for project id {project_id} using ONLY these recent events "
+        f"(most recent first):\n{events_text}"
+    )
+    data = parse_json_object(run_agent(system, user, api_call, require_tools=True))
     text = str(data.get("text") or "").strip()
     if not text:
         raise AiError(502, "The model returned an empty summary.")
@@ -339,14 +450,114 @@ def timeline_summary(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
 
 
 def daily_summary(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
+    facts = (body or {}).get("facts")
+    if not isinstance(facts, dict) or not facts:
+        raise AiError(400, "facts is required (dashboard-calculated findings).")
+    # Keep a compact, deterministic facts block from the UI
+    lines = []
+    status = facts.get("statusCounts") if isinstance(facts.get("statusCounts"), dict) else {}
+    if status:
+        lines.append(
+            "Status counts: "
+            + ", ".join(f"{k}: {status.get(k, 0)}" for k in ("active", "upcoming", "stuck", "completed"))
+        )
+    lines.append(
+        "Timeline health: "
+        f"{facts.get('onTrack', 0)} on track, "
+        f"{facts.get('dueSoon', 0)} due within 7 days, "
+        f"{facts.get('overdue', 0)} overdue."
+    )
+    for key, label in (
+        ("overdueList", "Overdue"),
+        ("dueSoonList", "Due soon"),
+        ("unassignedList", "No one assigned"),
+        ("stuckList", "Stuck"),
+    ):
+        items = facts.get(key)
+        if isinstance(items, list) and items:
+            names = []
+            for item in items:
+                if isinstance(item, dict):
+                    names.append(str(item.get("name") or item.get("id") or ""))
+                else:
+                    names.append(str(item))
+            names = [n for n in names if n]
+            if names:
+                lines.append(f"{label}: " + ", ".join(names))
+    facts_block = "\n".join(lines)
     system = (
         SHARED_RULES +
-        " Call list_projects (and list_employees if needed) and write a short daily project-health summary "
-        "for a team lead. Under 120 words. End with the single most urgent thing to address today. "
+        " Call list_projects once to verify the supplied dashboard facts against live records. "
+        "Write the summary using ONLY those supplied facts (and tool checks). Do not invent projects. "
+        "Under 120 words. End with the single most urgent thing to address today. "
         'Return {"text":"..."}.'
     )
-    data = parse_json_object(run_agent(system, "Write today's project-health summary.", api_call))
+    user = (
+        "Write today's project-health summary from these dashboard-calculated facts:\n\n"
+        + facts_block
+    )
+    data = parse_json_object(run_agent(system, user, api_call, require_tools=True))
     text = str(data.get("text") or "").strip()
     if not text:
         raise AiError(502, "The model returned an empty summary.")
     return {"text": text}
+
+
+def improve_note(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
+    text = str((body or {}).get("text") or "").strip()
+    if not text:
+        raise AiError(400, "text is required.")
+    employee_id = str((body or {}).get("employeeId") or "").strip()
+    system = (
+        SHARED_RULES +
+        " Improve clarity and phrasing of the note without changing its meaning or adding facts. "
+        "Keep about the same length. "
+        + (
+            "Call get_employee for the given employeeId so you know who the note is about; do not invent details about them. "
+            if employee_id else
+            "Call list_employees if you need directory context; do not invent people. "
+        )
+        + 'Return {"text":"..."} with ONLY the revised note.'
+    )
+    user = (
+        f"Improve this note for employee id {employee_id}:\n\n---\n{text}"
+        if employee_id else
+        f"Improve this note:\n\n---\n{text}"
+    )
+    data = parse_json_object(run_agent(system, user, api_call, require_tools=True))
+    revised = str(data.get("text") or "").strip()
+    if not revised:
+        raise AiError(502, "The model returned an empty note.")
+    return {"text": revised}
+
+
+def suggest_next_steps(body: dict[str, Any], api_call: ApiCall) -> dict[str, Any]:
+    memo = str((body or {}).get("memo") or "").strip()
+    if not memo:
+        raise AiError(400, "memo is required.")
+    project_id = str((body or {}).get("projectId") or "").strip()
+    system = (
+        SHARED_RULES +
+        " Read the meeting memo and extract concrete action items — things a person needs to do next. "
+        + (
+            "Call get_project for the given projectId so names and context stay grounded. "
+            if project_id else
+            "Call list_projects or list_employees if you need grounding; do not invent people. "
+        )
+        + "Return JSON: {\"items\":[\"...\"]} as short strings, one action each. "
+        "If nothing is actionable, return {\"items\":[]}."
+    )
+    user = (
+        f"Extract next steps from this memo for project id {project_id}:\n\n---\n{memo}"
+        if project_id else
+        f"Extract next steps from this memo:\n\n---\n{memo}"
+    )
+    data = parse_json_object(run_agent(system, user, api_call, require_tools=True))
+    items = data.get("items")
+    if not isinstance(items, list):
+        # tolerate {"text": "- a\\n- b"} style
+        text = str(data.get("text") or "").strip()
+        items = [ln.lstrip("-• ").strip() for ln in text.splitlines() if ln.strip()] if text else []
+    cleaned = [str(i).strip() for i in items if str(i).strip()]
+    text = "\n".join("- " + i for i in cleaned) if cleaned else ""
+    return {"items": cleaned, "text": text}

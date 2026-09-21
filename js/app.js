@@ -124,6 +124,8 @@
     dashTenure: document.getElementById("dash-tenure"),
     dashWorkload: document.getElementById("dash-workload"),
     dashAnniv: document.getElementById("dash-anniv"),
+    dashUnassigned: document.getElementById("dash-unassigned"),
+    dashUnassignedCount: document.getElementById("dash-unassigned-count"),
     notesSection: document.getElementById("notes-section"),
     notesHeading: document.getElementById("notes-heading"),
     notesList: document.getElementById("notes-list"),
@@ -1073,7 +1075,10 @@
         var memoEl = formEl.querySelector(".mn-memo");
         var nextEl = formEl.querySelector(".mn-next");
         var previewEl = formEl.querySelector(".ai-suggest-preview");
-        suggestNextSteps(memoEl, nextEl, previewEl, btn);
+        var projectId = (formEl.querySelector("[data-add-meeting]") || {}).getAttribute
+          ? formEl.querySelector("[data-add-meeting]").getAttribute("data-add-meeting")
+          : null;
+        suggestNextSteps(memoEl, nextEl, previewEl, btn, projectId);
       });
     });
     Array.prototype.forEach.call(els.mtgSectionsRoot.querySelectorAll("[data-summarize-timeline]"), function (btn) {
@@ -2215,6 +2220,27 @@
       '<div class="dash-stat badge tag-4" style="border-radius:12px;"><div class="num">' + dueSoon + '</div><div class="lbl">Due soon</div></div>' +
       '<div class="dash-stat badge wl-over" style="border-radius:12px;"><div class="num">' + overdue + '</div><div class="lbl">Overdue</div></div>';
 
+    var unassigned = state.projects.filter(function (p) {
+      return !(p.people || []).length && p.status !== "completed";
+    });
+    if (els.dashUnassignedCount) {
+      els.dashUnassignedCount.innerHTML =
+        '<div class="dash-stat badge ' + (unassigned.length ? "wl-over" : "wl-balanced") + '" style="border-radius:12px;"><div class="num">' + unassigned.length + '</div><div class="lbl">Unassigned</div></div>';
+    }
+    if (els.dashUnassigned) {
+      els.dashUnassigned.innerHTML = unassigned.length
+        ? unassigned.slice(0, 8).map(function (p) {
+            return '<button type="button" class="dash-anniv-item" data-id="' + escapeHtml(p.id) + '">' +
+              '<span class="dot" style="background: var(' + projStatusColorVar(p.status) + ');"></span>' +
+              '<span><span class="lbl-name">' + escapeHtml(p.name) + '</span><br><span class="lbl-sub">' + (MTG_STATUS_LABEL[p.status] || p.status) + ' · no people</span></span>' +
+            "</button>";
+          }).join("")
+        : '<p class="dash-empty-inline">Every open project has someone assigned.</p>';
+      Array.prototype.forEach.call(els.dashUnassigned.querySelectorAll(".dash-anniv-item"), function (btn) {
+        btn.addEventListener("click", function () { openProjectInMeetings(btn.getAttribute("data-id")); });
+      });
+    }
+
     var sizeBuckets = [
       { label: "Solo (1)", min: 1, max: 1, count: 0 },
       { label: "Small (2–3)", min: 2, max: 3, count: 0 },
@@ -3225,37 +3251,7 @@
     closeNewConvModal();
   });
 
-  // ---- Ask AI / AI writing assist ---------------------------------------
-  // Uses the page's "sample" capability (claude.use("sample")) to ask Claude
-  // directly from the browser — no separate backend. Resolved lazily on
-  // first use (not at page load) so the permission prompt only appears when
-  // someone actually clicks an AI action.
-  var sampleAI = null;
-  var sampleAIChecked = false;
-
-  async function getSampleAI() {
-    if (sampleAIChecked) return sampleAI;
-    sampleAIChecked = true;
-    try {
-      if (window.claude && typeof window.claude.use === "function") {
-        sampleAI = await window.claude.use("sample");
-      }
-    } catch (e) {
-      console.log("[org-chart-directory] claude.use('sample') failed", e);
-    }
-    return sampleAI;
-  }
-
-  async function callSampleText(input, opts) {
-    var sample = await getSampleAI();
-    if (!sample) {
-      var err = new Error("AI features aren't available in this view.");
-      err.code = "not_available";
-      throw err;
-    }
-    return sample(input, opts || {});
-  }
-
+  // ---- Ask AI / AI writing assist (all via local Ollama /api/ai/*) -------
   function aiErrorMessage(err) {
     if (err && (err.status === 503 || err.status === 502)) {
       return (err.data && err.data.error) || err.message || "Couldn't reach the local Ollama model. Is Ollama running with qwen3:14b?";
@@ -3266,36 +3262,15 @@
     return (err && err.data && err.data.error) || (err && err.message) || (err && err.text) || "Something went wrong.";
   }
 
-  // -- Ask AI (chat over the workspace's own data) --
-  var askAI = { messages: [], streaming: false, error: null };
-
-  function buildWorkspaceContext() {
-    var parts = [];
-    parts.push("PEOPLE (" + state.employees.length + "):");
-    state.employees.slice(0, 80).forEach(function (e) {
-      var mgr = state.employees.filter(function (m) { return m.id === e.managerId; })[0];
-      parts.push(
-        "- " + e.name + " — " + e.title + " (" + e.department + "), onboarding: " + e.status +
-        (mgr ? ", reports to " + mgr.name : "") + (e.email ? ", " + e.email : "")
-      );
-    });
-    parts.push("");
-    parts.push("PROJECTS (" + state.projects.length + "):");
-    state.projects.forEach(function (p) {
-      parts.push(
-        "- " + p.name + " [" + (MTG_STATUS_LABEL[p.status] || p.status) + "], " +
-        (p.startDate ? formatDate(p.startDate) : "no start date") + " to " + (p.endDate ? formatDate(p.endDate) : "no end date") +
-        ", people: " + ((p.people || []).join(", ") || "none assigned")
-      );
-      sortedMeetings(p.meetings).slice(0, 5).forEach(function (m) {
-        parts.push("  · " + formatDate(m.date) + " — memo: " + (m.memo || "—") + " | next steps: " + (m.nextSteps || "—"));
-      });
-    });
-    var text = parts.join("\n");
-    var MAX = 8000;
-    if (text.length > MAX) text = text.slice(0, MAX) + "\n…(truncated)";
-    return text;
+  function bindAiApproveDiscard(container, onKeep, onDiscard) {
+    var keepBtn = container.querySelector("[data-ai-keep]");
+    var discardBtn = container.querySelector("[data-ai-discard]");
+    if (keepBtn) keepBtn.addEventListener("click", onKeep);
+    if (discardBtn) discardBtn.addEventListener("click", onDiscard);
   }
+
+  // -- Ask AI (chat over the workspace's own data) --
+  var askAI = { messages: [], streaming: false, error: null, pendingIndex: null };
 
   function renderAskAI() {
     var hasMessages = askAI.messages.length > 0;
@@ -3304,20 +3279,46 @@
       els.askAiMessages.innerHTML = askAI.messages.map(function (m, i) {
         var isStreamingHere = askAI.streaming && i === askAI.messages.length - 1 && m.role === "assistant";
         var cursor = isStreamingHere ? '<span class="ai-cursor"></span>' : "";
-        return '<div class="ai-msg ai-msg-' + m.role + '">' + escapeHtml(m.text).replace(/\n/g, "<br>") + cursor + "</div>";
+        var pending = askAI.pendingIndex === i && m.role === "assistant" && !askAI.streaming && m.text;
+        var actions = pending
+          ? '<div class="ai-preview-actions">' +
+              '<button type="button" class="btn-ghost" data-ask-keep="' + i + '">Keep</button>' +
+              '<button type="button" class="btn-text" data-ask-discard="' + i + '">Discard</button>' +
+            "</div>"
+          : "";
+        return '<div class="ai-msg ai-msg-' + m.role + '">' + escapeHtml(m.text).replace(/\n/g, "<br>") + cursor + actions + "</div>";
       }).join("");
+      Array.prototype.forEach.call(els.askAiMessages.querySelectorAll("[data-ask-keep]"), function (btn) {
+        btn.addEventListener("click", function () {
+          askAI.pendingIndex = null;
+          renderAskAI();
+        });
+      });
+      Array.prototype.forEach.call(els.askAiMessages.querySelectorAll("[data-ask-discard]"), function (btn) {
+        btn.addEventListener("click", function () {
+          var idx = parseInt(btn.getAttribute("data-ask-discard"), 10);
+          if (askAI.messages[idx] && askAI.messages[idx].role === "assistant") {
+            askAI.messages.splice(idx, 1);
+            if (idx > 0 && askAI.messages[idx - 1] && askAI.messages[idx - 1].role === "user") {
+              askAI.messages.splice(idx - 1, 1);
+            }
+          }
+          askAI.pendingIndex = null;
+          renderAskAI();
+        });
+      });
     } else {
       els.askAiMessages.innerHTML = "";
     }
     els.askAiError.hidden = !askAI.error;
     if (askAI.error) els.askAiError.textContent = askAI.error;
-    els.askAiSendBtn.disabled = askAI.streaming;
+    els.askAiSendBtn.disabled = askAI.streaming || askAI.pendingIndex != null;
     els.askAiBody.scrollTop = els.askAiBody.scrollHeight;
   }
 
   async function askAISubmit(query) {
     query = (query || "").trim();
-    if (!query || askAI.streaming) return;
+    if (!query || askAI.streaming || askAI.pendingIndex != null) return;
     askAI.error = null;
     askAI.messages.push({ role: "user", text: query });
     var assistantMsg = { role: "assistant", text: "" };
@@ -3330,8 +3331,10 @@
         messages: askAI.messages.slice(0, -1).map(function (m) { return { role: m.role, text: m.text }; })
       });
       assistantMsg.text = (result && result.text) || "";
+      askAI.pendingIndex = askAI.messages.length - 1;
     } catch (err) {
       console.log("[org-chart-directory] Ask AI failed", err);
+      askAI.messages.pop();
       askAI.messages.pop();
       askAI.error = aiErrorMessage(err);
     } finally {
@@ -3399,10 +3402,10 @@
     notesAI.preview = "";
     renderNotesAI();
     try {
-      var result = await callSampleText(
-        "Improve the clarity and phrasing of this note without changing its meaning or adding new information. Keep it about the same length. Return ONLY the revised text, nothing else.\n\n---\n" + text,
-        { modelTier: "quick", cache: false }
-      );
+      var result = await TeamGridApi.post("/api/ai/improve-note", {
+        text: text,
+        employeeId: state.editingId || ""
+      });
       notesAI.preview = ((result && result.text) || "").trim();
     } catch (err) {
       notesAI.error = aiErrorMessage(err);
@@ -3415,7 +3418,7 @@
   els.notesAiBtn.addEventListener("click", improveNotesText);
 
   // -- AI action-item extraction: suggest "next steps" from a meeting memo --
-  async function suggestNextSteps(memoEl, nextEl, previewEl, btn) {
+  async function suggestNextSteps(memoEl, nextEl, previewEl, btn, projectId) {
     var memo = memoEl.value.trim();
     if (!memo) {
       previewEl.hidden = false;
@@ -3428,13 +3431,13 @@
     previewEl.hidden = true;
 
     try {
-      var result = await callSampleText(
-        "Read this meeting memo and extract the concrete action items — things a specific person needs to do next. Write them as a short list, one per line starting with \"- \", no other commentary. If nothing is actionable, respond with exactly: No action items found.\n\n---\n" + memo,
-        { modelTier: "quick", cache: false }
-      );
+      var result = await TeamGridApi.post("/api/ai/suggest-next-steps", {
+        memo: memo,
+        projectId: projectId || ""
+      });
       var suggestion = ((result && result.text) || "").trim();
       previewEl.hidden = false;
-      if (!suggestion || suggestion.toLowerCase().indexOf("no action items") !== -1) {
+      if (!suggestion) {
         previewEl.innerHTML = '<p class="ai-inline-error" style="margin:0;">No clear action items found in that memo.</p>';
       } else {
         previewEl.innerHTML =
@@ -3466,17 +3469,27 @@
     state.projects.forEach(function (p) { if (statusCounts.hasOwnProperty(p.status)) statusCounts[p.status]++; });
     var today = new Date();
     var onTrack = 0, dueSoon = 0, overdue = 0;
-    var overdueList = [], dueSoonList = [], unassignedList = [];
+    var overdueList = [], dueSoonList = [], unassignedList = [], stuckList = [];
     state.projects.forEach(function (p) {
-      if (!(p.people || []).length && p.status !== "completed") unassignedList.push(p);
+      if (!(p.people || []).length && p.status !== "completed") unassignedList.push({ id: p.id, name: p.name });
+      if (p.status === "stuck") stuckList.push({ id: p.id, name: p.name });
       if (p.status === "completed" || !p.endDate) return;
       var end = new Date(p.endDate + "T00:00:00");
       var daysLeft = (end - today) / (1000 * 60 * 60 * 24);
-      if (daysLeft < 0) { overdue++; overdueList.push(p); }
-      else if (daysLeft <= 7) { dueSoon++; dueSoonList.push(p); }
+      if (daysLeft < 0) { overdue++; overdueList.push({ id: p.id, name: p.name }); }
+      else if (daysLeft <= 7) { dueSoon++; dueSoonList.push({ id: p.id, name: p.name }); }
       else onTrack++;
     });
-    return { statusCounts: statusCounts, onTrack: onTrack, dueSoon: dueSoon, overdue: overdue, overdueList: overdueList, dueSoonList: dueSoonList, unassignedList: unassignedList };
+    return {
+      statusCounts: statusCounts,
+      onTrack: onTrack,
+      dueSoon: dueSoon,
+      overdue: overdue,
+      overdueList: overdueList,
+      dueSoonList: dueSoonList,
+      unassignedList: unassignedList,
+      stuckList: stuckList
+    };
   }
 
   async function generateDashboardSummary() {
@@ -3488,9 +3501,21 @@
     els.dashAiBody.innerHTML = '<p class="ai-inline-loading">Thinking…</p>';
 
     try {
-      var result = await TeamGridApi.post("/api/ai/daily-summary", {});
+      var facts = computeDashboardFindings();
+      var result = await TeamGridApi.post("/api/ai/daily-summary", { facts: facts });
       var text = ((result && result.text) || "").trim();
-      els.dashAiBody.innerHTML = '<p class="ai-preview-text">' + escapeHtml(text).replace(/\n/g, "<br>") + "</p>";
+      els.dashAiBody.innerHTML =
+        '<p class="ai-preview-text">' + escapeHtml(text).replace(/\n/g, "<br>") + "</p>" +
+        '<div class="ai-preview-actions">' +
+          '<button type="button" class="btn-ghost" data-ai-keep>Keep</button>' +
+          '<button type="button" class="btn-text" data-ai-discard>Discard</button>' +
+        "</div>";
+      bindAiApproveDiscard(els.dashAiBody, function () {
+        els.dashAiBody.innerHTML = '<p class="ai-preview-text">' + escapeHtml(text).replace(/\n/g, "<br>") + "</p>";
+      }, function () {
+        els.dashAiBody.hidden = true;
+        els.dashAiBody.innerHTML = "";
+      });
     } catch (err) {
       els.dashAiBody.innerHTML = '<p class="ai-inline-error" style="margin:0;">' + escapeHtml(aiErrorMessage(err)) + "</p>";
     } finally {
@@ -3501,11 +3526,11 @@
 
   els.dashAiBtn.addEventListener("click", generateDashboardSummary);
 
-  // -- AI timeline summary (per project, capped like ClickUp's: 10/day, skips events >35k chars) --
+  // -- AI timeline summary (per project; browser sends up to 10 recent events) --
   var TIMELINE_SUMMARY_DAILY_LIMIT = 10;
   var TIMELINE_SUMMARY_EVENT_LIMIT = 10;
   var TIMELINE_SUMMARY_CHAR_LIMIT = 35000;
-  var timelineSummaryFallbackUsage = null; // used only when localStorage is unavailable (e.g. private browsing)
+  var timelineSummaryFallbackUsage = null;
 
   function todayKey() {
     var d = new Date();
@@ -3569,13 +3594,27 @@
         noEventsErr.code = "no_events";
         throw noEventsErr;
       }
-      var result = await TeamGridApi.post("/api/ai/timeline-summary", { projectId: projectId });
+      var events = included.map(function (m) {
+        return { date: m.date || "", memo: m.memo || "", nextSteps: m.nextSteps || "" };
+      });
+      var result = await TeamGridApi.post("/api/ai/timeline-summary", { projectId: projectId, events: events });
       var text = ((result && result.text) || "").trim();
       recordTimelineSummaryUse();
       var note = skipped > 0
         ? '<p class="ai-timeline-note">' + skipped + " event" + (skipped === 1 ? "" : "s") + " skipped for exceeding the " + TIMELINE_SUMMARY_CHAR_LIMIT.toLocaleString() + "-character limit.</p>"
         : "";
-      bodyEl.innerHTML = '<p class="ai-preview-text">' + escapeHtml(text).replace(/\n/g, "<br>") + "</p>" + note;
+      bodyEl.innerHTML =
+        '<p class="ai-preview-text">' + escapeHtml(text).replace(/\n/g, "<br>") + "</p>" + note +
+        '<div class="ai-preview-actions">' +
+          '<button type="button" class="btn-ghost" data-ai-keep>Keep</button>' +
+          '<button type="button" class="btn-text" data-ai-discard>Discard</button>' +
+        "</div>";
+      bindAiApproveDiscard(bodyEl, function () {
+        bodyEl.innerHTML = '<p class="ai-preview-text">' + escapeHtml(text).replace(/\n/g, "<br>") + "</p>" + note;
+      }, function () {
+        bodyEl.hidden = true;
+        bodyEl.innerHTML = "";
+      });
     } catch (err) {
       var msg = err && err.code === "no_events" ? "Every recent event was too long to summarize (over " + TIMELINE_SUMMARY_CHAR_LIMIT.toLocaleString() + " characters)." : aiErrorMessage(err);
       bodyEl.innerHTML = '<p class="ai-inline-error" style="margin:0;">' + escapeHtml(msg) + "</p>";
@@ -3588,7 +3627,7 @@
     }
   }
 
-  // -- AI email composer (mocked; opens a ready-to-send Inbox draft) --
+  // -- AI email composer (opens a ready-to-send Inbox draft) --
   function mockProjectEmail(p, preset, instructions) {
     var people = p.people || [];
     var names = people.length ? people.join(", ") : "the project team";

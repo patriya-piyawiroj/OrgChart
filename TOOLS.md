@@ -26,11 +26,15 @@ Pull the model first: `ollama pull qwen3:14b`.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `POST` | `/api/ai/suggest-tasks` | Body: `{ "projectId" }`. Returns `{ "tasks": [{ "title", "assignee", "subtasks": [{ "title", "startDate", "endDate" }] }] }`. |
-| `POST` | `/api/ai/draft-email` | Body: `{ "projectId", "preset", "instructions" }`. Returns `{ "subject", "body", "recipients": [{ "name", "email" }] }`. |
-| `POST` | `/api/ai/chat` | Body: `{ "messages": [{ "role", "text" }] }`. Returns `{ "text" }`. |
-| `POST` | `/api/ai/timeline-summary` | Body: `{ "projectId" }`. Returns `{ "text" }`. |
-| `POST` | `/api/ai/daily-summary` | Body: `{}`. Returns `{ "text" }`. |
+| `POST` | `/api/ai/suggest-tasks` | Body: `{ "projectId" }`. Returns `{ "tasks": [{ "title", "assignee", "subtasks": [{ "title", "startDate", "endDate" }] }] }`. Assignees are validated against the employee directory. |
+| `POST` | `/api/ai/draft-email` | Body: `{ "projectId", "preset", "instructions" }`. Returns `{ "subject", "body", "recipients": [{ "name", "email" }] }`. Recipients/emails are filtered to project people in the directory. |
+| `POST` | `/api/ai/chat` | Body: `{ "messages": [{ "role", "text" }] }`. Returns `{ "text" }`. UI requires Keep/Discard. |
+| `POST` | `/api/ai/timeline-summary` | Body: `{ "projectId", "events": [{ "date", "memo", "nextSteps" }] }` (browser sends ≤10 recent events). Returns `{ "text" }`. |
+| `POST` | `/api/ai/daily-summary` | Body: `{ "facts": { …dashboard findings… } }`. Returns `{ "text" }`. |
+| `POST` | `/api/ai/improve-note` | Body: `{ "text", "employeeId" }`. Returns `{ "text" }` (revised note). |
+| `POST` | `/api/ai/suggest-next-steps` | Body: `{ "memo", "projectId" }`. Returns `{ "items": [...], "text" }` (bullet list). |
+
+The agent loop requires at least one read-tool call before accepting a final answer. See [PROMPTS.md](PROMPTS.md).
 
 ## Employees
 

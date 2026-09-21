@@ -468,6 +468,10 @@ def dispatch_ai(path: str, body: dict[str, Any]) -> tuple[int, Any]:
             return 200, ai.timeline_summary(body, call_tool_api)
         if path == "/api/ai/daily-summary":
             return 200, ai.daily_summary(body, call_tool_api)
+        if path == "/api/ai/improve-note":
+            return 200, ai.improve_note(body, call_tool_api)
+        if path == "/api/ai/suggest-next-steps":
+            return 200, ai.suggest_next_steps(body, call_tool_api)
     except ai.AiError as exc:
         raise ApiError(exc.status, exc.message) from exc
     raise ApiError(404, "Unknown API route")
